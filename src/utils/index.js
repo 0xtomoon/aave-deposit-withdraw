@@ -8,10 +8,8 @@ export interface IERC20 {
   name: string,
   abi: any
 };
-
-export const TOKENS_BY_SYMBOL: {
-  [key: string]: IERC20
-} = {
+export const LP_ADDRESS_PROVIDER_ADDRESS = '0x88757f2f99175387ab4c6a4b3067c77a695b0349';
+export const TOKENS_BY_SYMBOL = {
   ['DAI']: {
     address: '0xff795577d9ac8bd7d90ee22b6c1703490b6512fd',
     name: 'Dai Stablecoin',

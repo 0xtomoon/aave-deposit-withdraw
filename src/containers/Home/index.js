@@ -3,13 +3,14 @@ import AccountCard from "../../components/common/AccountCard";
 import Chart from "../../components/common/Chart";
 import TextInput from "../../components/common/TextInput";
 import Button from "../../components/common/Button";
+import * as api from "../../services/api";
 
 import { useWeb3React } from "@web3-react/core";
 import { ethers } from 'ethers'
 import {formatUnits, parseUnits} from "@ethersproject/units";
 
 import { injected } from "../../components/wallet/connectors";
-import { formatData, TOKENS_BY_SYMBOL } from "../../utils";
+import { formatData, TOKENS_BY_SYMBOL, LP_ADDRESS_PROVIDER_ADDRESS } from "../../utils";
 
 import LendingPoolAddressProviderABI from '../../abi/AddressProvider.json'
 import LendingPoolABI from '../../abi/LendingPool.json'
@@ -25,27 +26,22 @@ function Home() {
   const withdrawRef = useRef();
   const [daiBalance, setDaiBalance] = useState(0);
   const [aDaiBalance, setADaiBalance] = useState(0);
+  const { fetchHistoricalData } = api;
   
   useEffect(() => {
     // get chart data
-    let today = new Date();
+    const today = new Date();
     let start = new Date();
     start.setDate(start.getDate() - 30);
     start = start.toISOString();
-    let end = today.toISOString();
+    const end = today.toISOString();
     
-    let historicalDataURL = `${url}/products/ETH-USD/candles?start=${start}&end=${end}&granularity=86400`;
-    const fetchHistoricalData = async () => {
-      let dataArr = [];
-      await fetch(historicalDataURL)
-        .then((res) => res.json())
-        .then((data) => (dataArr = data));
-      
-      let formattedData = formatData(dataArr);
-      setPastData(formattedData);
-    };
-
-    fetchHistoricalData();
+    const historicalDataURL = `${url}/products/ETH-USD/candles?start=${start}&end=${end}&granularity=86400`;
+    const getData = async () => {
+      const graphData = await fetchHistoricalData(historicalDataURL);
+      setPastData(graphData);
+    }
+    getData();
   }, []);
 
   useEffect(() => {
@@ -76,7 +72,7 @@ function Home() {
 
   // Create the LendingPoolAddressProvider contract instance
   const getLendingPoolAddressProviderContract = () => {
-    const lpAddressProviderAddress = "0x88757f2f99175387ab4c6a4b3067c77a695b0349"; // kovan address, https://docs.aave.com/developers/deployed-contracts/deployed-contracts
+    const lpAddressProviderAddress = LP_ADDRESS_PROVIDER_ADDRESS; // kovan address, https://docs.aave.com/developers/deployed-contracts/deployed-contracts
     const lpAddressProviderContract = new ethers.Contract(lpAddressProviderAddress, LendingPoolAddressProviderABI, provider);
     return lpAddressProviderContract;
   }
@@ -102,10 +98,10 @@ function Home() {
       const lpAddress = await getLendingPoolAddress();
       // Approve the LendingPoolCore address with the DAI contract
       const daiContract = new ethers.Contract(TOKENS_BY_SYMBOL['DAI'].address, TOKENS_BY_SYMBOL['DAI'].abi, provider.getSigner())
-      let gaslimit = await daiContract
+      const gaslimit = await daiContract
         .estimateGas.approve(lpAddress, parseUnits(depositVal, TOKENS_BY_SYMBOL['DAI'].decimals));
 
-      let tx = await daiContract
+      const tx = await daiContract
         .approve(lpAddress, parseUnits(depositVal, TOKENS_BY_SYMBOL['DAI'].decimals), {gasLimit: gaslimit})
         .catch((e) => {
           throw Error(`Error approving DAI allowance: ${e.message}`)
@@ -129,9 +125,9 @@ function Home() {
       const lpContract = new ethers.Contract(lpAddress, LendingPoolABI, provider.getSigner())
       const referralCode = "0x0"
       
-      let gaslimit = await lpContract
+      const gaslimit = await lpContract
         .estimateGas.deposit(TOKENS_BY_SYMBOL['DAI'].address, parseUnits(depositVal, TOKENS_BY_SYMBOL['DAI'].decimals).toString(), account, referralCode)
-      let tx = await lpContract
+      const tx = await lpContract
         .deposit(TOKENS_BY_SYMBOL['DAI'].address, parseUnits(depositVal, TOKENS_BY_SYMBOL['DAI'].decimals).toString(), account, referralCode, {gasLimit: gaslimit})
         .catch((e) => {
           throw Error(`Error depositing to the LendingPool contract: ${e.message}`)
@@ -156,9 +152,9 @@ function Home() {
       const lpContract = new ethers.Contract(lpAddress, LendingPoolABI, provider.getSigner())
       const referralCode = "0x0"
 
-      let gaslimit = await lpContract
+      const gaslimit = await lpContract
         .estimateGas.withdraw(TOKENS_BY_SYMBOL['DAI'].address, parseUnits(withdrawVal, TOKENS_BY_SYMBOL['DAI'].decimals).toString(), account)
-      let tx = await lpContract
+      const tx = await lpContract
         .withdraw(TOKENS_BY_SYMBOL['DAI'].address, parseUnits(withdrawVal, TOKENS_BY_SYMBOL['DAI'].decimals).toString(), account, {gasLimit: gaslimit})
         .catch((e) => {
           throw Error(`Error withdrawing : ${e.message}`)

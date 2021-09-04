@@ -1,18 +1,11 @@
-import apiClient from "./axios";
+import { formatData } from "../utils";
 
-export function getData(id) {
-  return apiClient
-    .get(`/posts/${id}`)
-    .then(response => {
-      if (response) {
-        return response.data;
-      }
-      return false;
-    })
-    .catch(error => {
-      console.log("API: getData() Error: ", error);
-      return false;
-    });
-}
-
-export function testFunction() {}
+export async function fetchHistoricalData (historicalDataURL) {
+  let dataArr = [];
+  await fetch(historicalDataURL)
+    .then((res) => res.json())
+    .then((data) => (dataArr = data));
+  
+  const formattedData = formatData(dataArr);
+  return formattedData;
+};
